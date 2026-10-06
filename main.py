@@ -38,7 +38,7 @@ async def edit(id: int, article: ArticleUpdate, db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.id == id).first()
 
     if not post:
-        return HTTPException(status_code=404, detail="Post not found")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     if article.title is not None:
         post.title = article.title
@@ -56,7 +56,7 @@ async def delete(id: int, db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.id == id).first()
 
     if not post:
-        return HTTPException(status_code=404, detail="Post not found")
+        raise HTTPException(status_code=404, detail="Post not found")
 
     db.delete(post)
     db.commit()
