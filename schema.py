@@ -7,3 +7,11 @@ class Article(BaseModel):
 class ArticleUpdate(BaseModel): 
     title: str | None = None
     content: str | None = None
+
+class NewUser(BaseModel):
+    login: str
+    password: str
+
+class UserLogin(BaseModel):
+    login: str
+    password: str
