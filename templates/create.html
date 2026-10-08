@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create article — Personal Blog</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <a href="/" class="logo">Personal Blog</a>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/dashboard">Dashboard</a>
+        </nav>
+    </div>
+</header>
+
+<main class="container">
+    <section class="form-page">
+        <a href="/dashboard" class="back-link">← Back to dashboard</a>
+
+        <h1>Create article</h1>
+
+        <form method="post" action="/create">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" placeholder="Article title" required>
+
+            <label for="content">Content</label>
+            <textarea id="content" name="content" rows="15" placeholder="Write your article..." required></textarea>
+
+            <button type="submit">Publish article</button>
+        </form>
+    </section>
+</main>
+
+</body>
+</html>

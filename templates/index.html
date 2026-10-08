@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Blog</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <a href="/" class="logo">Personal Blog</a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/dashboard">Dashboard</a>
+    </nav>
+</div>
+
+</header>
+
+<main class="container">
+    <section class="hero">
+        <h1>My Blog</h1>
+        <p>Thoughts, ideas and articles.</p>
+    </section>
+
+<section class="posts">
+    {% for post in posts %}
+        <article class="post-card">
+            <h2>
+                <a href="/post/{{ post.id }}">{{ post.title }}</a>
+            </h2>
+
+            <p class="post-date">
+                {{ post.time.strftime("%d.%m.%Y %H:%M") }}
+            </p>
+
+            <p class="post-preview">
+                {{ post.content[:200] }}
+                {% if post.content|length > 200 %}...{% endif %}
+            </p>
+
+            <a href="/post/{{ post.id }}" class="read-more">
+                Read article →
+            </a>
+        </article>
+    {% else %}
+        <p class="empty">There are no articles yet.</p>
+    {% endfor %}
+</section>
+
+</main>
+
+</body>
+</html>

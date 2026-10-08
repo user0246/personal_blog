@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Personal Blog</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <a href="/" class="logo">Personal Blog</a>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/dashboard">Dashboard</a>
+    </nav>
+</div>
+
+</header>
+
+<main class="container">
+    <section class="dashboard">
+        <div class="dashboard-header">
+            <div>
+                <h1>Dashboard</h1>
+                <p>Manage your articles.</p>
+            </div>
+
+        <a href="/create" class="button">+ New article</a>
+    </div>
+
+    <div class="admin-posts">
+        {% for post in posts %}
+            <article class="admin-post">
+                <div>
+                    <h2>{{ post.title }}</h2>
+
+                    <p class="post-date">
+                        {{ post.time.strftime("%d.%m.%Y %H:%M") }}
+                    </p>
+                </div>
+
+                <div class="actions">
+                    <a href="/post/{{ post.id }}" class="button secondary">
+                        View
+                    </a>
+
+                    <a href="/edit/{{ post.id }}" class="button secondary">
+                        Edit
+                    </a>
+
+                    <form method="post" action="/delete/{{ post.id }}">
+                        <button type="submit" class="button danger">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </article>
+        {% else %}
+            <p class="empty">There are no articles yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+</main>
+
+</body>
+</html>

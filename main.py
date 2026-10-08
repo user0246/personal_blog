@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Depends, HTTPException, status, Form, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from typing import Annotated
 import secrets
@@ -10,6 +12,10 @@ from schema import Article, ArticleUpdate, NewUser, UserLogin
 from models import Post, User 
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 security = HTTPBasic()
 
@@ -39,21 +45,23 @@ def get_current_username(
     return credentials.username
 
 @app.get("/")
-async def main(db: Session = Depends(get_db)):
+async def main(request: Request, db: Session = Depends(get_db)):
     posts = db.query(Post).all()
-    return JSONResponse(content=jsonable_encoder(posts)) 
+    return templates.TemplateResponse(request=request, name="index.html", context={"posts": posts})
+    #return JSONResponse(content=jsonable_encoder(posts)) 
 
 @app.get("/post/{id}")
-async def post_by_id(id: int, db: Session = Depends(get_db)):
+async def post_by_id(id: int, request: Request, db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.id == id).first() 
-    return JSONResponse(content=jsonable_encoder(post)) 
+    return templates.TemplateResponse(request=request, name="post.html", context={"post": post})
+    #return JSONResponse(content=jsonable_encoder(post)) 
 
 @app.post("/create", response_model=Article)
-async def create_post(article: Article, username: Annotated[str, Depends(get_current_username)], db: Session = Depends(get_db)):
+async def create_post(username: Annotated[str, Depends(get_current_username)], db: Session = Depends(get_db), title: str = Form(), content: str = Form()):
     user = db.query(User).filter(User.login == username).first()
     post = Post(
-        title = article.title,
-        content = article.content,
+        title = title,
+        content = content,
         user_id = user.id 
     )
 
@@ -61,30 +69,48 @@ async def create_post(article: Article, username: Annotated[str, Depends(get_cur
     db.commit()
     db.refresh(post)
 
-    return post
+    return RedirectResponse(url="/dashboard", status_code=303)
 
-@app.patch("/edit/{id}", response_model=ArticleUpdate)
-async def edit(id: int, article: ArticleUpdate, username: Annotated[str, Depends(get_current_username)], db: Session = Depends(get_db)):
+@app.get("/create")
+async def create_get(request: Request, username: Annotated[str, Depends(get_current_username)]):
+    return templates.TemplateResponse(request=request, name="create.html")
+
+@app.post("/edit/{id}", response_model=ArticleUpdate)
+async def edit(id: int, username: Annotated[str, Depends(get_current_username)], db: Session = Depends(get_db), title: str = Form(), content: str = Form()):
     post = db.query(Post).filter(Post.id == id).first()
-
-    if post.user.login != username:
-        raise HTTPException(status_code=404, detail="cannot edit")
 
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
 
-    if article.title is not None:
-        post.title = article.title
+    if post.user.login != username:
+        raise HTTPException(status_code=403, detail="cannot edit")
 
-    if article.content is not None:
-        post.content = article.content
+    if title is not None:
+        post.title = title
+
+    if content is not None:
+        post.content = content
 
     db.commit()
     db.refresh(post)
 
-    return post
+    return RedirectResponse(url="/dashboard", status_code=303)
 
-@app.delete("/delete/{id}")
+@app.get("/edit/{id}")
+async def edit_get(id: int, request: Request, username: Annotated[str, Depends(get_current_username)], db: Session = Depends(get_db)):
+    post = db.query(Post).filter(Post.id == id).first()
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    if post.user.login != username:
+        raise HTTPException(status_code=403, detail="cannot edit")
+
+    return templates.TemplateResponse(request=request, name="edit.html", context={"post": post})
+
+ 
+
+@app.post("/delete/{id}")
 async def delete(id: int, username: Annotated[str, Depends(get_current_username)], db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.id == id).first()
 
@@ -92,12 +118,12 @@ async def delete(id: int, username: Annotated[str, Depends(get_current_username)
         raise HTTPException(status_code=404, detail="Post not found")
 
     if post.user.login != username:
-        raise HTTPException(status_code=404, detail="cannot delete")
+        raise HTTPException(status_code=403, detail="cannot delete")
 
     db.delete(post)
     db.commit()
 
-    return {"message": "post deleted"}
+    return RedirectResponse(url="/dashboard", status_code=303)
 
 @app.post("/user", response_model=NewUser)
 async def create_user(user: NewUser, db: Session = Depends(get_db)):
@@ -123,6 +149,13 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="wrong password") 
 
     return {"message": "alright alright alright"}
+
+@app.get("/dashboard")
+async def dashboard(request: Request, username: Annotated[str, Depends(get_current_username)], db: Session = Depends(get_db)):
+    posts = db.query(Post).all()
+
+    return templates.TemplateResponse(request=request, name="dashboard.html", context={"posts": posts})
+
 
 @app.get("/me")
 async def read_current_user(username: Annotated[str, Depends(get_current_username)]):
