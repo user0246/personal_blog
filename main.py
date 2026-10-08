@@ -67,7 +67,7 @@ async def create_post(article: Article, username: Annotated[str, Depends(get_cur
 async def edit(id: int, article: ArticleUpdate, username: Annotated[str, Depends(get_current_username)], db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.id == id).first()
 
-    if post.user != username:
+    if post.user.login != username:
         raise HTTPException(status_code=404, detail="cannot edit")
 
     if not post:
@@ -90,6 +90,9 @@ async def delete(id: int, username: Annotated[str, Depends(get_current_username)
 
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
+
+    if post.user.login != username:
+        raise HTTPException(status_code=404, detail="cannot delete")
 
     db.delete(post)
     db.commit()
